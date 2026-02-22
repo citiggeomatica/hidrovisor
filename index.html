@@ -434,9 +434,9 @@
         .info-panel {
             position: absolute;
             top: 70px;
-            right: -100%; /* Empieza fuera de pantalla */
+            right: -100%; 
             width: 340px;
-            max-width: calc(100vw - 32px); /* Evita desborde en móviles */
+            max-width: calc(100vw - 32px); 
             background: var(--glass);
             backdrop-filter: blur(20px);
             border: 1px solid var(--panel-border);
@@ -498,20 +498,20 @@
 
         /* ── MEDIA QUERIES (TABLETS & MÓVILES) ── */
         @media (max-width: 900px) {
-            .brand-text p:nth-of-type(2) { display: none; } /* Oculta el Creado by en pantallas muy chicas para ahorrar espacio */
+            .brand-text p:nth-of-type(2) { display: none; }
         }
 
         @media (max-width: 768px) {
             header { padding: 10px 14px; justify-content: center; text-align: center; }
             .brand { justify-content: center; width: 100%; margin-bottom: 5px;}
             .header-controls { width: 100%; justify-content: center; }
-            .status-badge { display: none; } /* Ocultamos badge para hacer espacio */
+            .status-badge { display: none; } 
             
             .toolbar { padding: 8px 14px; }
-            .tool-btn span { display: none; } /* Oculta texto de botones, deja solo el icono */
+            .tool-btn span { display: none; } 
             
             .coord-bar { padding: 10px 14px; justify-content: center; }
-            .datum-text { display: none; } /* Oculta el EPSG en móvil */
+            .datum-text { display: none; } 
 
             .main-content { flex-direction: column; }
             
@@ -737,15 +737,28 @@
             }
         }
 
-        // ── Navigate ──
+        // ── Navigate (REPARADO) ──
         function navigateToCoords() {
             const lat = document.getElementById('lat').value;
             const lon = document.getElementById('lon').value;
             const zoom = document.getElementById('zoom').value;
+            
+            // Creamos una marca de tiempo para obligar al navegador a recargar el iframe
+            const timestamp = new Date().getTime();
 
-            const hydroUrl = `https://hydroviewer.geoglows.org/#lon=${lon}&lat=${lat}&zoom=${zoom}.00&definition=`;
-            document.getElementById('iframe-hydro').src = hydroUrl;
+            // 1. Actualizamos la URL de GEOGLOWS
+            const hydroUrl = `https://hydroviewer.geoglows.org/?t=${timestamp}#lon=${lon}&lat=${lat}&zoom=${zoom}.00&definition=`;
+            
+            // 2. Actualizamos la URL de Esri (agregando los parámetros center y level)
+            const esriUrl = `https://esri.maps.arcgis.com/apps/instant/streamflowviewer/index.html?appid=dc581038afee4a1f958edbbba668613e&id=670021271&center=${lon},${lat}&level=${zoom}&t=${timestamp}`;
+
+            // Mostramos las animaciones de carga
             document.getElementById('loading-hydro').classList.remove('hidden');
+            document.getElementById('loading-stream').classList.remove('hidden');
+
+            // Aplicamos las nuevas rutas a los iframes
+            document.getElementById('iframe-hydro').src = hydroUrl;
+            document.getElementById('iframe-stream').src = esriUrl;
         }
 
         // ── Refresh ──
