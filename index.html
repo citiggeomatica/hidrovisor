@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HidroVisor NCC — Sistema de Monitoreo Hidrológico</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        /* ── PALETA DE COLORES ── */
+        :root {
+            --primary: #004B87;       
+            --primary-light: #0066B3; 
+            --accent: #00AEEF;        
+            --accent-dim: #5BC2E7;
+            --dark: #08111A;          
+            --panel: #0E1A26;         
+            --panel-border: rgba(0, 174, 239, 0.2);
+            --text: #F0F4F8;
+            --text-dim: #9AB4CD;
+            --danger: #FF6B6B;
+            --warning: #FFD93D;
+            --glass: rgba(14, 26, 38, 0.9);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: linear-gradient(135deg, var(--panel) 0%, #051A30 100%);
+            border-bottom: 1px solid var(--panel-border);
+            padding: 0 24px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 100;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.6;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-image {
+            height: 40px;
+            border-radius: 4px;
+            object-fit: contain;
+            background-color: white; 
+            padding: 2px;
+        }
+
+        .brand-text h1 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 24px;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1;
+            color: var(--text);
+        }
+
+        .brand-text h1 span {
+            color: var(--accent);
+        }
+
+        .brand-text p {
+            font-size: 10.5px;
+            color: var(--accent-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 2px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(0, 174, 239, 0.1);
+            border: 1px solid rgba(0, 174, 239, 0.3);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--accent);
+            white-space: nowrap;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 174, 239, 0.5); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0, 174, 239, 0); }
+        }
+
+        .time-display {
+            font-size: 12px;
+            color: var(--text-dim);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        /* ── TOOLBAR ── */
+        .toolbar {
+            background: var(--panel);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 0 24px;
+            min-height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tab-group {
+            display: flex;
+            gap: 2px;
+            overflow-x: auto; /* Permite scroll horizontal en móviles */
+            scrollbar-width: none;
+        }
+        
+        .tab-group::-webkit-scrollbar { display: none; }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+        }
+
+        .tab-btn.active {
+            background: rgba(0, 174, 239, 0.15);
+            color: var(--accent);
+        }
+
+        .tab-icon {
+            width: 16px;
+            height: 16px;
+            opacity: 0.7;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .tool-btn {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-dim);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            padding: 6px 14px;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .tool-btn:hover {
+            background: rgba(255,255,255,0.08);
+            color: var(--text);
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        /* ── COORD BAR ── */
+        .coord-bar {
+            background: rgba(0, 174, 239, 0.05);
+            border-bottom: 1px solid rgba(0, 174, 239, 0.1);
+            padding: 8px 24px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap; /* Permite que los inputs bajen de línea si no caben */
+            gap: 15px;
+            font-size: 12px;
+            color: var(--text-dim);
+            flex-shrink: 0;
+        }
+
+        .coord-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .coord-bar label {
+            font-weight: 500;
+            color: var(--accent-dim);
+        }
+
+        .coord-input {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text);
+            font-family: 'DM Sans', monospace;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 5px;
+            width: 100px;
+            text-align: center;
+        }
+
+        .coord-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(0, 174, 239, 0.2);
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%);
+            border: none;
+            color: white;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(0, 174, 239, 0.4);
+        }
+
+        .datum-text { margin-left: auto; opacity: 0.5; }
+
+        /* ── MAIN CONTENT ── */
+        .main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .map-panel {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0; /* Importante para el responsive en flexbox */
+        }
+
+        .map-panel + .map-panel {
+            border-left: 2px solid var(--primary);
+        }
+
+        .panel-header {
+            background: linear-gradient(90deg, var(--panel), rgba(14,26,38,0.95));
+            padding: 0 16px;
+            min-height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .panel-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .panel-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .dot-hydro { background: #00AEEF; box-shadow: 0 0 8px rgba(0,174,239,0.5); }
+        .dot-stream { background: #FFD93D; box-shadow: 0 0 8px rgba(255,217,61,0.4); }
+
+        .panel-tag {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+        }
+
+        .tag-hydro { background: rgba(0,174,239,0.15); color: #00AEEF; }
+        .tag-stream { background: rgba(255,217,61,0.15); color: #FFD93D; }
+
+        .iframe-container {
+            flex: 1;
+            position: relative;
+            background: var(--dark);
+        }
+
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: var(--dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            z-index: 10;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.08);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text { font-size: 13px; color: var(--text-dim); }
+
+        /* ── DIVIDER ── */
+        .divider-handle {
+            width: 8px;
+            background: var(--primary);
+            cursor: col-resize;
+            position: relative;
+            flex-shrink: 0;
+            transition: background 0.2s;
+            z-index: 50;
+        }
+
+        .divider-handle:hover, .divider-handle.dragging { background: var(--accent); }
+
+        .divider-handle::after {
+            content: '⋮';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.6);
+            font-size: 16px;
+        }
+
+        /* Single panel mode */
+        .map-panel.full { flex: 1 !important; }
+        .map-panel.hidden-panel { display: none !important; }
+        .divider-handle.hidden-panel { display: none !important; }
+
+        /* ── FOOTER ── */
+        footer {
+            background: var(--panel);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 8px 24px;
+            min-height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 11px;
+            color: var(--text-dim);
+            flex-shrink: 0;
+        }
+
+        .footer-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .footer-indicator { display: flex; align-items: center; gap: 5px; }
+        .footer-indicator .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+
+        /* ── QUICK INFO PANEL ── */
+        .info-panel {
+            position: absolute;
+            top: 70px;
+            right: -100%; /* Empieza fuera de pantalla */
+            width: 340px;
+            max-width: calc(100vw - 32px); /* Evita desborde en móviles */
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--panel-border);
+            border-radius: 14px;
+            padding: 24px;
+            z-index: 200;
+            transition: right 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: -10px 0 40px rgba(0,0,0,0.5);
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .info-panel.open { right: 16px; }
+
+        .info-panel h3 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 20px;
+            font-weight: 400;
+            margin-bottom: 16px;
+            color: var(--accent);
+        }
+
+        .info-item {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .info-item:last-child { border: none; }
+
+        .info-item dt {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        .info-item dd { font-size: 14px; color: var(--text); }
+
+        .close-info {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255,255,255,0.08);
+            border: none;
+            color: var(--text-dim);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .close-info:hover { background: rgba(255,255,255,0.15); color: var(--text); }
+
+        /* ── MEDIA QUERIES (TABLETS & MÓVILES) ── */
+        @media (max-width: 900px) {
+            .brand-text p:nth-of-type(2) { display: none; } /* Oculta el Creado by en pantallas muy chicas para ahorrar espacio */
+        }
+
+        @media (max-width: 768px) {
+            header { padding: 10px 14px; justify-content: center; text-align: center; }
+            .brand { justify-content: center; width: 100%; margin-bottom: 5px;}
+            .header-controls { width: 100%; justify-content: center; }
+            .status-badge { display: none; } /* Ocultamos badge para hacer espacio */
+            
+            .toolbar { padding: 8px 14px; }
+            .tool-btn span { display: none; } /* Oculta texto de botones, deja solo el icono */
+            
+            .coord-bar { padding: 10px 14px; justify-content: center; }
+            .datum-text { display: none; } /* Oculta el EPSG en móvil */
+
+            .main-content { flex-direction: column; }
+            
+            .map-panel + .map-panel { border-left: none; border-top: 2px solid var(--primary); }
+            
+            /* Divider horizontal en móvil */
+            .divider-handle { width: 100%; height: 12px; cursor: row-resize; }
+            .divider-handle::after { content: '⋯'; transform: translate(-50%, -50%) rotate(0deg); }
+
+            footer { flex-direction: column; text-align: center; justify-content: center; padding: 12px; }
+            .footer-left { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR3aQPIxlHb5YUwu9H3NZJclkLXPqHzUnG49A&s" alt="Logo" class="logo-image">
+            <div class="brand-text">
+                <h1>HidroVisor <span>NCC</span></h1>
+                <p>Sistema de Monitoreo Hidrológico</p>
+                <p>Creado By Dennis Chum</p>
+            </div>
+        </div>
+        <div class="header-controls">
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                En Tiempo Real
+            </div>
+            <div class="time-display" id="clock"></div>
+        </div>
+    </header>
+
+    <div class="toolbar">
+        <div class="tab-group">
+            <button class="tab-btn active" onclick="setView('split')">
+                <svg class="tab-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="1" y="1" width="14" height="14" rx="2"/>
+                    <line x1="8" y1="1" x2="8" y2="15"/>
+                </svg>
+                Pantalla Dividida
+            </button>
+            <button class="tab-btn" onclick="setView('hydro')">
+                <svg class="tab-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M8 2 C8 2 3 7 3 10 C3 12.8 5.2 15 8 15 C10.8 15 13 12.8 13 10 C13 7 8 2 8 2Z"/>
+                </svg>
+                Pronóstico de Ríos
+            </button>
+            <button class="tab-btn" onclick="setView('stream')">
+                <svg class="tab-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M2 8 C4 4 6 12 8 8 C10 4 12 12 14 8"/>
+                </svg>
+                Caudal Fluvial
+            </button>
+        </div>
+        <div class="toolbar-actions">
+            <button class="tool-btn" onclick="toggleInfo()" title="Información">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="8" cy="8" r="7"/><line x1="8" y1="7" x2="8" y2="12"/><circle cx="8" cy="4.5" r="0.8" fill="currentColor"/>
+                </svg>
+                <span>Información</span>
+            </button>
+            <button class="tool-btn" onclick="refreshMaps()" title="Actualizar">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M2 8a6 6 0 0 1 10.5-4M14 8a6 6 0 0 1-10.5 4"/>
+                    <path d="M12.5 1v3h-3M3.5 15v-3h3"/>
+                </svg>
+                <span>Actualizar</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="coord-bar">
+        <div class="coord-item">
+            <label>Lat:</label>
+            <input type="text" class="coord-input" id="lat" value="-12.03" placeholder="Latitud">
+        </div>
+        <div class="coord-item">
+            <label>Lon:</label>
+            <input type="text" class="coord-input" id="lon" value="-76.59" placeholder="Longitud">
+        </div>
+        <div class="coord-item">
+            <label>Zoom:</label>
+            <input type="text" class="coord-input" id="zoom" value="15" placeholder="Zoom" style="width:50px">
+        </div>
+        <button class="nav-btn" onclick="navigateToCoords()">Ir a Ubicación</button>
+        <span class="datum-text">Datum: WGS84 | EPSG:4326</span>
+    </div>
+
+    <div class="main-content">
+        <div class="map-panel" id="panel-hydro" style="flex: 0 0 50%;">
+            <div class="panel-header">
+                <div class="panel-label">
+                    <div class="panel-dot dot-hydro"></div>
+                    Sistema de Pronóstico GEOGLOWS
+                </div>
+                <span class="panel-tag tag-hydro">Pronóstico</span>
+            </div>
+            <div class="iframe-container">
+                <div class="loading-overlay" id="loading-hydro">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Cargando modelo...</div>
+                </div>
+                <iframe
+                    id="iframe-hydro"
+                    src="https://hydroviewer.geoglows.org/#lon=-76.59&lat=-12.03&zoom=15.00&definition="
+                    loading="lazy"
+                    allow="geolocation"
+                    onload="hideLoading('loading-hydro')"
+                ></iframe>
+            </div>
+        </div>
+
+        <div class="divider-handle" id="divider"></div>
+
+        <div class="map-panel" id="panel-stream" style="flex: 1;">
+            <div class="panel-header">
+                <div class="panel-label">
+                    <div class="panel-dot dot-stream"></div>
+                    Visor de Caudal Fluvial
+                </div>
+                <span class="panel-tag tag-stream">Tiempo Real</span>
+            </div>
+            <div class="iframe-container">
+                <div class="loading-overlay" id="loading-stream">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Cargando datos...</div>
+                </div>
+                <iframe
+                    id="iframe-stream"
+                    src="https://esri.maps.arcgis.com/apps/instant/streamflowviewer/index.html?appid=dc581038afee4a1f958edbbba668613e&id=670021271"
+                    loading="lazy"
+                    allow="geolocation"
+                    onload="hideLoading('loading-stream')"
+                ></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-panel" id="info-panel">
+        <button class="close-info" onclick="toggleInfo()">✕</button>
+        <h3>Acerca del Sistema</h3>
+        <dl>
+            <div class="info-item">
+                <dt>Modelo de Pronóstico</dt>
+                <dd>Pronóstico global de caudales basado en los modelos de GEOGLOWS y ECMWF.</dd>
+            </div>
+            <div class="info-item">
+                <dt>Caudal Fluvial</dt>
+                <dd>Monitoreo en tiempo real utilizando sensores distribuidos e imágenes satelitales.</dd>
+            </div>
+            <div class="info-item">
+                <dt>Desarrollo</dt>
+                <dd>Creado By Dennis Chum.</dd>
+            </div>
+            <div class="info-item">
+                <dt>Versión</dt>
+                <dd>HidroVisor NCC v2.1 — 2026</dd>
+            </div>
+        </dl>
+    </div>
+
+    <footer>
+        <div class="footer-left">
+            <div class="footer-indicator">
+                <div class="dot"></div>
+                Todos los servicios operativos
+            </div>
+            <span>|</span>
+            <span>Perú</span>
+        </div>
+        <div>
+            HidroVisor NCC © 2026 — Sistema de Monitoreo Hidrológico
+        </div>
+    </footer>
+
+    <script>
+        // ── Clock ──
+        function updateClock() {
+            const now = new Date();
+            const opts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            document.getElementById('clock').textContent = now.toLocaleTimeString('es-PE', opts) + ' (hora local)';
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // ── Loading ──
+        function hideLoading(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        }
+
+        setTimeout(() => {
+            document.querySelectorAll('.loading-overlay').forEach(el => el.classList.add('hidden'));
+        }, 12000);
+
+        // ── View Modes ──
+        function setView(mode) {
+            const hydro = document.getElementById('panel-hydro');
+            const stream = document.getElementById('panel-stream');
+            const divider = document.getElementById('divider');
+
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            hydro.classList.remove('full', 'hidden-panel');
+            stream.classList.remove('full', 'hidden-panel');
+            divider.classList.remove('hidden-panel');
+
+            // Reinicia los flex en pantalla dividida para evitar bugs al redimensionar
+            if (mode === 'split') {
+                hydro.style.flex = '0 0 50%';
+                stream.style.flex = '1';
+            } else if (mode === 'hydro') {
+                hydro.classList.add('full');
+                stream.classList.add('hidden-panel');
+                divider.classList.add('hidden-panel');
+            } else if (mode === 'stream') {
+                stream.classList.add('full');
+                hydro.classList.add('hidden-panel');
+                divider.classList.add('hidden-panel');
+            }
+        }
+
+        // ── Navigate ──
+        function navigateToCoords() {
+            const lat = document.getElementById('lat').value;
+            const lon = document.getElementById('lon').value;
+            const zoom = document.getElementById('zoom').value;
+
+            const hydroUrl = `https://hydroviewer.geoglows.org/#lon=${lon}&lat=${lat}&zoom=${zoom}.00&definition=`;
+            document.getElementById('iframe-hydro').src = hydroUrl;
+            document.getElementById('loading-hydro').classList.remove('hidden');
+        }
+
+        // ── Refresh ──
+        function refreshMaps() {
+            const iframes = document.querySelectorAll('iframe');
+            iframes.forEach(iframe => {
+                const src = iframe.src;
+                iframe.src = '';
+                setTimeout(() => { iframe.src = src; }, 100);
+            });
+            document.querySelectorAll('.loading-overlay').forEach(el => el.classList.remove('hidden'));
+        }
+
+        // ── Info Panel ──
+        function toggleInfo() {
+            document.getElementById('info-panel').classList.toggle('open');
+        }
+
+        // ── Dragging Logic (Mouse & Touch para móviles) ──
+        const divider = document.getElementById('divider');
+        const mainContent = document.querySelector('.main-content');
+        let isDragging = false;
+
+        function startDrag() {
+            isDragging = true;
+            divider.classList.add('dragging');
+            document.body.style.userSelect = 'none';
+            document.querySelectorAll('iframe').forEach(f => f.style.pointerEvents = 'none');
+        }
+
+        function endDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            divider.classList.remove('dragging');
+            document.body.style.userSelect = '';
+            document.querySelectorAll('iframe').forEach(f => f.style.pointerEvents = '');
+        }
+
+        function onDrag(clientX, clientY) {
+            if (!isDragging) return;
+            const rect = mainContent.getBoundingClientRect();
+            
+            // Detecta si estamos en vista móvil (columna) o PC (fila)
+            if (window.innerWidth <= 768) {
+                // Arrastre Vertical (Mobile)
+                const pct = ((clientY - rect.top) / rect.height) * 100;
+                const clamped = Math.max(20, Math.min(80, pct));
+                document.getElementById('panel-hydro').style.flex = `0 0 ${clamped}%`;
+                document.getElementById('panel-stream').style.flex = `0 0 ${100 - clamped}%`;
+            } else {
+                // Arrastre Horizontal (PC)
+                const pct = ((clientX - rect.left) / rect.width) * 100;
+                const clamped = Math.max(20, Math.min(80, pct));
+                document.getElementById('panel-hydro').style.flex = `0 0 ${clamped}%`;
+                document.getElementById('panel-stream').style.flex = `0 0 ${100 - clamped}%`;
+            }
+        }
+
+        // Eventos Mouse (PC)
+        divider.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', (e) => onDrag(e.clientX, e.clientY));
+        document.addEventListener('mouseup', endDrag);
+
+        // Eventos Touch (Móviles / Tablets)
+        divider.addEventListener('touchstart', startDrag, { passive: true });
+        document.addEventListener('touchmove', (e) => {
+            if(isDragging) onDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+        document.addEventListener('touchend', endDrag);
+
+        // ── Keyboard shortcut ──
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.getElementById('info-panel').classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html>
