@@ -588,11 +588,11 @@
     <div class="coord-bar">
         <div class="coord-item">
             <label>Lat:</label>
-            <input type="text" class="coord-input" id="lat" value="-12.03" placeholder="Latitud">
+            <input type="text" class="coord-input" id="lat" value="-12.11" placeholder="Latitud">
         </div>
         <div class="coord-item">
             <label>Lon:</label>
-            <input type="text" class="coord-input" id="lon" value="-76.59" placeholder="Longitud">
+            <input type="text" class="coord-input" id="lon" value="-76.67" placeholder="Longitud">
         </div>
         <div class="coord-item">
             <label>Zoom:</label>
@@ -618,7 +618,7 @@
                 </div>
                 <iframe
                     id="iframe-hydro"
-                    src="https://hydroviewer.geoglows.org/#lon=-76.59&lat=-12.03&zoom=15.00&definition="
+                    src="https://hydroviewer.geoglows.org/#lon=-76.67&lat=-12.11&zoom=15.00&definition="
                     loading="lazy"
                     allow="geolocation"
                     onload="hideLoading('loading-hydro')"
@@ -643,7 +643,7 @@
                 </div>
                 <iframe
                     id="iframe-stream"
-                    src="https://esri.maps.arcgis.com/apps/instant/streamflowviewer/index.html?appid=dc581038afee4a1f958edbbba668613e&id=670021271"
+                    src="https://esri.maps.arcgis.com/apps/instant/streamflowviewer/index.html?appid=dc581038afee4a1f958edbbba668613e&id=670021271&center=-76.67,-12.11&level=15"
                     loading="lazy"
                     allow="geolocation"
                     onload="hideLoading('loading-stream')"
@@ -737,7 +737,7 @@
             }
         }
 
-        // ── Navigate (REPARADO) ──
+        // ── Navigate ──
         function navigateToCoords() {
             const lat = document.getElementById('lat').value;
             const lon = document.getElementById('lon').value;
@@ -749,7 +749,7 @@
             // 1. Actualizamos la URL de GEOGLOWS
             const hydroUrl = `https://hydroviewer.geoglows.org/?t=${timestamp}#lon=${lon}&lat=${lat}&zoom=${zoom}.00&definition=`;
             
-            // 2. Actualizamos la URL de Esri (agregando los parámetros center y level)
+            // 2. Actualizamos la URL de Esri
             const esriUrl = `https://esri.maps.arcgis.com/apps/instant/streamflowviewer/index.html?appid=dc581038afee4a1f958edbbba668613e&id=670021271&center=${lon},${lat}&level=${zoom}&t=${timestamp}`;
 
             // Mostramos las animaciones de carga
